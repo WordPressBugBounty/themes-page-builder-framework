@@ -3,7 +3,6 @@ import {
 	AnyWpbfCustomizeControl,
 	WpbfCustomize,
 } from "../../Base/src/interface";
-import "./typography-control.scss";
 import {
 	FontProperties,
 	FontProperty,
@@ -14,9 +13,13 @@ import {
 	WpbfCustomizeTypographyControlValue,
 } from "./interface";
 import {
-	SelectControlChoices,
+	SelectControlChoice,
 	WpbfCustomizeSelectControl,
 } from "../../Select/src/interface";
+import { WpbfCustomizeAssocArrayControl } from "../../Generic/src/interface";
+import { isNumeric } from "../../Generic/src/number-util";
+
+import "./typography-control.scss";
 
 declare var wp: {
 	customize: WpbfCustomize;
@@ -35,17 +38,19 @@ declare var wpbfFieldsFontVariants:
 	| Record<string, Record<string, LabelValuePair[]>>
 	| undefined;
 
-wp.customize.bind("ready", function () {
-	setupTypographyFields();
+wp.customize?.bind("ready", function () {
+	if (!wp.customize) return;
+
+	setupTypographyFields(wp.customize);
 });
 
-function setupTypographyFields() {
+function setupTypographyFields(customizer: WpbfCustomize) {
 	if (!Array.isArray(wpbfTypographyControlIds)) return;
 
 	wpbfTypographyControlIds.forEach((id) => {
-		if (!wp.customize.control(id)) return;
+		if (!customizer.control(id)) return;
 
-		wp.customize(id, function (setting) {
+		customizer(id, function (setting) {
 			composeFontProperties(id, undefined, undefined, undefined);
 
 			setting.bind(function (value) {
@@ -89,7 +94,7 @@ function findGoogleFont(fontFamily: string): GoogleFontEntity | undefined {
 
 function variantFoundInChoices(
 	variantValue: string,
-	variants: SelectControlChoices,
+	variants: SelectControlChoice[],
 ) {
 	return variants.some((variant) => variant.id == variantValue);
 }
@@ -101,12 +106,15 @@ function composeFontProperties(
 	triggerPropertyValue?: string,
 	triggerChange?: boolean,
 ) {
-	const control = wp.customize.control(id);
+	const control: WpbfCustomizeAssocArrayControl | undefined =
+		wp.customize?.control(id);
 	if (!control || !control.setting) return;
 
 	val = val || control.setting.get();
 
 	const value = { ...val };
+
+	if ("font-backup" in value) delete value["font-backup"];
 
 	if ("undefined" === typeof value) return;
 	if ("string" !== typeof value["font-family"]) return;
@@ -118,8 +126,8 @@ function composeFontProperties(
 		value[triggerPropertyName] = triggerPropertyValue;
 	}
 
-	const variantValue =
-		"undefined" === typeof value.variant ? "regular" : value.variant;
+	let variantValue = !value.variant ? "regular" : value.variant;
+	value.variant = variantValue;
 
 	const maybeVariantControl = wp.customize.control(id + "[variant]");
 
@@ -149,14 +157,19 @@ function composeFontProperties(
 			? variantValue
 			: "regular";
 
-		variantControl.$selectbox?.empty();
-		variantControl.$selectbox?.append(
+		// Update the `variantValue` with the updated option value.
+		variantValue = updatedOptionValue;
+
+		const $variantSelectbox = variantControl.container?.find(".wpbf-select2");
+
+		$variantSelectbox?.empty();
+		$variantSelectbox?.append(
 			variantChoices.map((choice) => {
 				return new Option(choice.text, choice.id, false, false);
 			}),
 		);
-		variantControl.$selectbox?.val(updatedOptionValue);
-		variantControl.$selectbox?.trigger("change");
+		$variantSelectbox?.val(variantValue);
+		value["variant"] = variantValue;
 	}
 
 	// Set the font-style value.
@@ -170,10 +183,12 @@ function composeFontProperties(
 	value["font-weight"] =
 		"regular" === variantValue || "italic" === variantValue
 			? 400
-			: parseInt(variantValue, 10);
+			: isNumeric(variantValue)
+				? parseInt(variantValue, 10)
+				: 400;
 
 	if (triggerChange) {
-		value["random"] = Date.now();
+		// value["random"] = Date.now();
 	}
 
 	control.setting.set(value);
@@ -197,7 +212,7 @@ function collectVariantChoices(
 
 	const googleFont = findGoogleFont(fontFamily);
 
-	const variantChoices: SelectControlChoices = [];
+	const variantChoices: SelectControlChoice[] = [];
 
 	if (googleFont) {
 		if (!wpbfFontVariantOptions) return variantChoices;

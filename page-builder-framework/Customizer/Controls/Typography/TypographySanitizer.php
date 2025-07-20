@@ -9,10 +9,12 @@ class TypographySanitizer {
 	/**
 	 * Sanitize the typography value.
 	 *
-	 * @param mixed $value The value to sanitize.
+	 * @param mixed       $value The value to sanitize.
+	 * @param string|null $setting_id The setting id.
+	 *
 	 * @return array
 	 */
-	public function sanitize( $value ) {
+	public function sanitize( $value, $setting_id = null ) {
 
 		if ( ! is_array( $value ) ) {
 			return [];
@@ -26,7 +28,7 @@ class TypographySanitizer {
 
 				case 'variant':
 					// Use 'regular' instead of 400 for font-variant.
-					$value['variant'] = ( 400 === $val || '400' === $val ) ? 'regular' : $val;
+					$value['variant'] = 400 === $val || '400' === $val || empty( $val ) ? 'regular' : $val;
 
 					// Get font-weight from variant.
 					$value['font-weight'] = filter_var( $value['variant'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION );
@@ -67,6 +69,15 @@ class TypographySanitizer {
 				default:
 					$value[ $key ] = sanitize_text_field( $value[ $key ] );
 			}
+		}
+
+		if ( isset( $value['random'] ) ) {
+			unset( $value['random'] );
+		}
+
+		// Not sure where does this came from, but some test sites have this key.
+		if ( isset( $value['font-backup'] ) ) {
+			unset( $value['font-backup'] );
 		}
 
 		return $value;
