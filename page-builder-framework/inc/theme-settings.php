@@ -6,6 +6,8 @@
  */
 
 use Mapsteps\Wpbf\Customizer\Controls\Typography\FontsUtil;
+use Mapsteps\Wpbf\Customizer\Output\CustomizerCss;
+use Mapsteps\Wpbf\Customizer\Output\FontsOutput;
 
 defined( 'ABSPATH' ) || die( "Can't access directly" );
 
@@ -74,11 +76,20 @@ function wpbf_activation_notice_dismissal() {
 add_action( 'wp_ajax_wpbf_activation_notice_dismissal', 'wpbf_activation_notice_dismissal' );
 
 /**
+ * Year of the Black Friday sale notice (November 23 – 30). Update it each year.
+ *
+ * @return string
+ */
+function wpbf_bfcm_year() {
+	return '2026';
+}
+
+/**
  * Save BFCM notice dismissal.
  */
 function wpbf_bfcm_notice_dismissal() {
 
-	$nonce   = isset( $_POST['nonce'] ) ? $_POST['nonce'] : 0;
+	$nonce   = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 	$dismiss = isset( $_POST['dismiss'] ) ? absint( $_POST['dismiss'] ) : 0;
 
 	if ( empty( $dismiss ) ) {
@@ -89,7 +100,11 @@ function wpbf_bfcm_notice_dismissal() {
 		wp_send_json_error( 'Invalid Token' );
 	}
 
-	update_option( 'wpbf_bfcm_notice_dismissed_2025', 1 );
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( 'Not allowed' );
+	}
+
+	update_option( 'wpbf_bfcm_notice_dismissed_' . wpbf_bfcm_year(), 1 );
 	wp_send_json_success( 'BFCM notice has been dismissed.' );
 
 }
@@ -135,17 +150,24 @@ function wpbf_show_bfcm_notice() {
 		return;
 	}
 
-	$start = strtotime( 'november 24th, 2025' );
-	$end   = strtotime( 'december 1st, 2025' );
-	$now   = time();
+	$this_year = wpbf_bfcm_year();
+	$last_year = $this_year - 1;
+	$start     = strtotime( 'november 23rd, ' . $this_year );
+	$end       = strtotime( 'december 1st, ' . $this_year );
+	$now       = time();
 
 	// Stop here if we are not in the sales period.
 	if ( $now < $start || $now > $end ) {
 		return;
 	}
 
+	// Clean up: delete last year's dismissal.
+	if ( ! empty( get_option( 'wpbf_bfcm_notice_dismissed_' . $last_year, 0 ) ) ) {
+		delete_option( 'wpbf_bfcm_notice_dismissed_' . $last_year );
+	}
+
 	// Stop here if notice has been dismissed.
-	if ( ! empty( get_option( 'wpbf_bfcm_notice_dismissed_2025', 0 ) ) ) {
+	if ( ! empty( get_option( 'wpbf_bfcm_notice_dismissed_' . $this_year, 0 ) ) ) {
 		return;
 	}
 
@@ -189,6 +211,14 @@ function wpbf_clear_font_cache() {
 
 	if ( is_wp_error( $result ) ) {
 		wp_send_json_error( $result->get_error_message() );
+	}
+
+	// Download the fonts again right away, so pages never go without them until the scheduled refresh runs on cron.
+	// The user asked for fresh fonts: fonts paused after failed downloads get a new try too.
+	delete_option( FontsOutput::FAILED_OPTION );
+
+	if ( CustomizerCss::enabled() ) {
+		CustomizerCss::refreshWithFonts();
 	}
 
 	wp_send_json_success( 'Font Cache cleared.', 'page-builder-framework' );

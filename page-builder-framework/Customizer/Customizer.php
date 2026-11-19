@@ -11,7 +11,9 @@ defined( 'ABSPATH' ) || die( "Can't access directly" );
 
 use Mapsteps\Wpbf\Customizer\Controls\Repeater\RepeaterSetting;
 use Mapsteps\Wpbf\Customizer\Controls\Typography\TypographyStore;
+use Mapsteps\Wpbf\Customizer\Output\CustomizerCss;
 use Mapsteps\Wpbf\Customizer\Output\FontsOutput;
+use Mapsteps\Wpbf\Customizer\Registry\Registry;
 use WP_Customize_Manager;
 
 /**
@@ -42,6 +44,12 @@ final class Customizer {
 	 */
 	public function init() {
 
+		// Build everything declared so far (theme, Premium, child themes), before anything below reads the registry.
+		add_action( 'customize_register', array( Registry::class, 'build' ), 1 );
+
+		// Every control, panel and section type is in one script and one stylesheet, registered before anything hands it data.
+		add_action( 'customize_controls_enqueue_scripts', array( CustomizerAssets::class, 'enqueue' ), 1 );
+
 		/**
 		 * Added with priority 5 to ensure that the 'section-tab' fields will be added
 		 * in the next priority where 'register_wpbf_customizer' is called.
@@ -49,9 +57,17 @@ final class Customizer {
 		add_action( 'customize_register', array( $this, 'add_section_tabs' ), 5 );
 
 		add_action( 'customize_register', array( $this, 'register_wpbf_customizer' ) );
-		add_action( 'customize_preview_init', array( $this, 'customize_preview_init' ) );
-		add_action( 'customize_controls_enqueue_scripts', array( $this, 'register_tooltips' ) );
-		add_action( 'customize_controls_enqueue_scripts', array( $this, 'js_vars_for_controls' ) );
+
+		/**
+		 * These localize scripts that the typography fields register while they're built (on customize_register),
+		 * so they're hooked from the registry right after the theme's settings, as they always ran after them.
+		 */
+		Registry::add(
+			function () {
+				add_action( 'customize_controls_enqueue_scripts', array( $this, 'register_tooltips' ) );
+				add_action( 'customize_controls_enqueue_scripts', array( $this, 'js_vars_for_controls' ) );
+			}
+		);
 
 	}
 
@@ -63,6 +79,7 @@ final class Customizer {
 	public function output() {
 
 		( new FontsOutput() )->init();
+		CustomizerCss::init();
 
 	}
 
@@ -108,24 +125,7 @@ final class Customizer {
 		$this->register_controls( $wp_customize_manager );
 		$this->register_selective_refreshes( $wp_customize_manager );
 
-		add_action( 'customize_controls_enqueue_scripts', array( $this, 'enqueue_custom_panel_types' ) );
-		add_action( 'customize_controls_enqueue_scripts', array( $this, 'enqueue_custom_section_types' ) );
 		add_action( 'customize_controls_enqueue_scripts', array( $this, 'register_control_dependencies' ) );
-
-	}
-
-	/**
-	 * Enqueue customize preview scripts.
-	 *
-	 * @return void
-	 */
-	public function customize_preview_init() {
-
-		$customizer_util = new CustomizerUtil();
-
-		foreach ( CustomizerStore::$added_controls as $control ) {
-			$customizer_util->enqueuePreviewScripts( $control );
-		}
 
 	}
 
@@ -266,33 +266,6 @@ final class Customizer {
 	}
 
 	/**
-	 * Enqueue custom panel types.
-	 *
-	 * @return void
-	 */
-	public function enqueue_custom_panel_types() {
-
-		// Enqueue the scripts.
-		wp_enqueue_script( 'wpbf-panels', WPBF_THEME_URI . '/Customizer/Panels/dist/panel-types-min.js', array( 'customize-controls' ), WPBF_VERSION, false );
-
-	}
-
-	/**
-	 * Enqueue custom section types.
-	 *
-	 * @return void
-	 */
-	public function enqueue_custom_section_types() {
-
-		// Enqueue the styles.
-		wp_enqueue_style( 'wpbf-sections', WPBF_THEME_URI . '/Customizer/Sections/dist/section-types-min.css', array(), WPBF_VERSION );
-
-		// Enqueue the scripts.
-		wp_enqueue_script( 'wpbf-sections', WPBF_THEME_URI . '/Customizer/Sections/dist/section-types-min.js', array( 'customize-controls' ), WPBF_VERSION, false );
-
-	}
-
-	/**
 	 * Register control's tooltips.
 	 *
 	 * @return void
@@ -315,7 +288,7 @@ final class Customizer {
 			}
 		}
 
-		wp_localize_script( 'wpbf-base-control', 'wpbfCustomizerTooltips', $tooltips );
+		wp_localize_script( CustomizerAssets::HANDLE, 'wpbfCustomizerTooltips', $tooltips );
 
 	}
 
@@ -327,11 +300,11 @@ final class Customizer {
 	public function js_vars_for_controls() {
 
 		if ( is_array( TypographyStore::$added_control_ids ) ) {
-			wp_localize_script( 'wpbf-typography-control', 'wpbfTypographyControlIds', TypographyStore::$added_control_ids );
+			wp_localize_script( CustomizerAssets::HANDLE, 'wpbfTypographyControlIds', TypographyStore::$added_control_ids );
 		}
 
 		wp_localize_script(
-			'wpbf-dimension-control',
+			CustomizerAssets::HANDLE,
 			'wpbfDimensionControlL10n',
 			[
 				'invalid-value' => esc_html__( 'Invalid Value', 'page-builder-framework' ),
@@ -364,7 +337,7 @@ final class Customizer {
 	 */
 	public function register_control_dependencies() {
 
-		wp_localize_script( 'wpbf-base-control', 'wpbfCustomizerControlDependencies', CustomizerStore::$added_control_dependencies );
+		wp_localize_script( CustomizerAssets::HANDLE, 'wpbfCustomizerControlDependencies', CustomizerStore::$added_control_dependencies );
 
 	}
 

@@ -84,12 +84,7 @@ foreach ( $singles as $single ) {
 // Meta sortable.
 wpbf_customizer_field()
 	->id( 'blog_sortable_meta' )
-	->type( 'sortable' )
 	->label( __( 'Meta Data', 'page-builder-framework' ) )
-	->defaultValue( array(
-		'author',
-		'date',
-	) )
 	->choices( array(
 		'author'   => __( 'Author', 'page-builder-framework' ),
 		'date'     => __( 'Date', 'page-builder-framework' ),
@@ -110,9 +105,7 @@ wpbf_customizer_field()
 // Separator.
 wpbf_customizer_field()
 	->id( 'blog_meta_separator' )
-	->type( 'text' )
 	->label( __( 'Separator', 'page-builder-framework' ) )
-	->defaultValue( '|' )
 	->priority( 1 )
 	->partialRefresh( [
 		'metaseparator' => array(
@@ -128,9 +121,7 @@ wpbf_customizer_field()
 // Author avatar.
 wpbf_customizer_field()
 	->id( 'blog_author_avatar' )
-	->type( 'toggle' )
 	->label( __( 'Author Avatar', 'page-builder-framework' ) )
-	->defaultValue( false )
 	->priority( 1 )
 	->activeCallback( [
 		array(
@@ -160,10 +151,8 @@ wpbf_customizer_field()
 // Excerpt length.
 wpbf_customizer_field()
 	->id( 'excerpt_lenght' )
-	->type( 'number' )
 	->label( __( 'Excerpt Length', 'page-builder-framework' ) )
 	->description( __( 'By default the excerpt length is set to return 55 words.', 'page-builder-framework' ) )
-	->defaultValue( 55 )
 	->properties( [
 		'min'  => 0,
 		'max'  => 100,
@@ -183,9 +172,7 @@ wpbf_customizer_field()
 // Excerpt more.
 wpbf_customizer_field()
 	->id( 'excerpt_more' )
-	->type( 'text' )
 	->label( __( 'Excerpt Indicator', 'page-builder-framework' ) )
-	->defaultValue( '[...]' )
 	->priority( 1 )
 	->partialRefresh( [
 		'blogexcerptindicator' => array(
@@ -207,9 +194,7 @@ wpbf_customizer_field()
 // Read more button.
 wpbf_customizer_field()
 	->id( 'blog_read_more_link' )
-	->type( 'select' )
 	->label( __( 'Read More Link', 'page-builder-framework' ) )
-	->defaultValue( 'button' )
 	->choices( [
 		'text'    => __( 'Text', 'page-builder-framework' ),
 		'button'  => __( 'Button', 'page-builder-framework' ),
@@ -230,9 +215,7 @@ wpbf_customizer_field()
 // Read more text.
 wpbf_customizer_field()
 	->id( 'blog_read_more_text' )
-	->type( 'text' )
 	->label( __( 'Read More Text', 'page-builder-framework' ) )
-	->defaultValue( 'Read more' )
 	->priority( 1 )
 	->partialRefresh( [
 		'blogreadmoretext' => array(
@@ -255,9 +238,7 @@ wpbf_customizer_field()
 // Categories title.
 wpbf_customizer_field()
 	->id( 'blog_categories_title' )
-	->type( 'text' )
 	->label( __( 'Categories Title', 'page-builder-framework' ) )
-	->defaultValue( 'Filed under:' )
 	->priority( 1 )
 	->partialRefresh( [
 		'catstitle' => array(
@@ -275,7 +256,6 @@ wpbf_customizer_field()
 // Pagination background color.
 wpbf_customizer_field()
 	->id( 'blog_pagination_background_color' )
-	->type( 'color' )
 	->label( __( 'Background Color', 'page-builder-framework' ) )
 	->priority( 1 )
 	->transport( 'postMessage' )
@@ -287,7 +267,6 @@ wpbf_customizer_field()
 // Pagination background color alt.
 wpbf_customizer_field()
 	->id( 'blog_pagination_background_color_alt' )
-	->type( 'color' )
 	->label( __( 'Hover', 'page-builder-framework' ) )
 	->priority( 2 )
 	->transport( 'postMessage' )
@@ -299,7 +278,6 @@ wpbf_customizer_field()
 // Pagination background color active.
 wpbf_customizer_field()
 	->id( 'blog_pagination_background_color_active' )
-	->type( 'color' )
 	->label( __( 'Active', 'page-builder-framework' ) )
 	->priority( 3 )
 	->transport( 'postMessage' )
@@ -311,7 +289,6 @@ wpbf_customizer_field()
 // Pagination font color.
 wpbf_customizer_field()
 	->id( 'blog_pagination_font_color' )
-	->type( 'color' )
 	->label( __( 'Font Color', 'page-builder-framework' ) )
 	->priority( 4 )
 	->transport( 'postMessage' )
@@ -323,11 +300,9 @@ wpbf_customizer_field()
 // Pagination hover color.
 wpbf_customizer_field()
 	->id( 'blog_pagination_font_color_alt' )
-	->type( 'color' )
 	->label( __( 'Hover', 'page-builder-framework' ) )
 	->priority( 5 )
 	->transport( 'postMessage' )
-	->defaultValue( '' )
 	->properties( [
 		'mode' => 'alpha',
 	] )
@@ -336,11 +311,9 @@ wpbf_customizer_field()
 // Pagination active color.
 wpbf_customizer_field()
 	->id( 'blog_pagination_font_color_active' )
-	->type( 'color' )
 	->label( __( 'Active', 'page-builder-framework' ) )
 	->priority( 6 )
 	->transport( 'postMessage' )
-	->defaultValue( '' )
 	->properties( [
 		'mode' => 'alpha',
 	] )
@@ -349,9 +322,7 @@ wpbf_customizer_field()
 // Border radius.
 wpbf_customizer_field()
 	->id( 'blog_pagination_border_radius' )
-	->type( 'slider' )
 	->label( __( 'Border Radius', 'page-builder-framework' ) )
-	->defaultValue( 0 )
 	->priority( 7 )
 	->transport( 'postMessage' )
 	->properties( [
@@ -364,7 +335,6 @@ wpbf_customizer_field()
 // Pagination font size.
 wpbf_customizer_field()
 	->id( 'blog_pagination_font_size' )
-	->type( 'input-slider' )
 	->label( __( 'Font Size', 'page-builder-framework' ) )
 	->priority( 8 )
 	->transport( 'postMessage' )
@@ -382,10 +352,10 @@ foreach ( $archives as $archive ) {
 	// Width.
 	wpbf_customizer_field()
 		->id( $archive . '_custom_width' )
-		->type( 'dimension' )
 		->label( __( 'Custom Content Width', 'page-builder-framework' ) )
 		->description( __( 'Default: 1200px', 'page-builder-framework' ) )
 		->priority( 0 )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	if ( 'blog' !== $archive && 'search' !== $archive ) {
@@ -393,9 +363,7 @@ foreach ( $archives as $archive ) {
 		// Headline.
 		wpbf_customizer_field()
 			->id( $archive . '_headline' )
-			->type( 'select' )
 			->label( ucwords( str_replace( '-', ' ', $archive ) ) . '&nbsp;' . __( 'Headline', 'page-builder-framework' ) )
-			->defaultValue( 'show' )
 			->priority( 0 )
 			->choices( [
 				'show'        => __( 'Show', 'page-builder-framework' ),
@@ -409,9 +377,7 @@ foreach ( $archives as $archive ) {
 	// Sidebar layout.
 	wpbf_customizer_field()
 		->id( $archive . '_sidebar_layout' )
-		->type( 'select' )
 		->label( __( 'Sidebar', 'page-builder-framework' ) )
-		->defaultValue( 'global' )
 		->priority( 0 )
 		->choices( [
 			'global' => __( 'Inherit Global Settings', 'page-builder-framework' ),
@@ -431,13 +397,7 @@ foreach ( $archives as $archive ) {
 	// Header.
 	wpbf_customizer_field()
 		->id( $archive . '_sortable_header' )
-		->type( 'sortable' )
 		->label( __( 'Header', 'page-builder-framework' ) )
-		->defaultValue( array(
-			'title',
-			'meta',
-			'featured',
-		) )
 		->choices( array(
 			'title'    => __( 'Title', 'page-builder-framework' ),
 			'meta'     => __( 'Meta Data', 'page-builder-framework' ),
@@ -449,11 +409,7 @@ foreach ( $archives as $archive ) {
 	// Header.
 	wpbf_customizer_field()
 		->id( $archive . '_sortable_content' )
-		->type( 'sortable' )
 		->label( __( 'Content', 'page-builder-framework' ) )
-		->defaultValue( array(
-			'excerpt',
-		) )
 		->choices( array(
 			'excerpt' => __( 'Excerpt', 'page-builder-framework' ),
 			'post'    => __( 'Full Post', 'page-builder-framework' ),
@@ -464,12 +420,7 @@ foreach ( $archives as $archive ) {
 	// Footer.
 	wpbf_customizer_field()
 		->id( $archive . '_sortable_footer' )
-		->type( 'sortable' )
 		->label( __( 'Footer', 'page-builder-framework' ) )
-		->defaultValue( array(
-			'readmore',
-			'categories',
-		) )
 		->choices( array(
 			'readmore'   => __( 'Read More', 'page-builder-framework' ),
 			'categories' => __( 'Categories', 'page-builder-framework' ),
@@ -488,9 +439,7 @@ foreach ( $archives as $archive ) {
 	// Layout.
 	wpbf_customizer_field()
 		->id( $archive . '_layout' )
-		->type( 'select' )
 		->label( __( 'Layout', 'page-builder-framework' ) )
-		->defaultValue( 'default' )
 		->choices( apply_filters(
 			'wpbf_blog_layouts',
 			array(
@@ -504,9 +453,7 @@ foreach ( $archives as $archive ) {
 	// Style.
 	wpbf_customizer_field()
 		->id( $archive . '_post_style' )
-		->type( 'select' )
 		->label( __( 'Style', 'page-builder-framework' ) )
-		->defaultValue( 'plain' )
 		->choices( [
 			'plain' => __( 'Default', 'page-builder-framework' ),
 			'boxed' => __( 'Boxed', 'page-builder-framework' ),
@@ -517,9 +464,7 @@ foreach ( $archives as $archive ) {
 	// Stretch image.
 	wpbf_customizer_field()
 		->id( $archive . '_boxed_image_streched' )
-		->type( 'toggle' )
 		->label( __( 'Stretch Featured Image', 'page-builder-framework' ) )
-		->defaultValue( false )
 		->priority( 20 )
 		->activeCallback( [
 			array(
@@ -538,7 +483,6 @@ foreach ( $archives as $archive ) {
 	// Padding.
 	wpbf_customizer_field()
 		->id( $archive . '_boxed_padding' )
-		->type( 'responsive-padding' )
 		->label( __( 'Padding', 'page-builder-framework' ) )
 		->priority( 25 )
 		->activeCallback( [
@@ -549,17 +493,15 @@ foreach ( $archives as $archive ) {
 			),
 		] )
 		->properties( [
-			'save_as_json'   => true,
 			'dont_save_unit' => true,
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	// Space between.
 	wpbf_customizer_field()
 		->id( $archive . '_post_space_between' )
-		->type( 'slider' )
 		->label( __( 'Space Between', 'page-builder-framework' ) )
-		->defaultValue( 20 )
 		->properties( [
 			'min'  => 0,
 			'max'  => 100,
@@ -573,23 +515,20 @@ foreach ( $archives as $archive ) {
 	// Alignment.
 	wpbf_customizer_field()
 		->id( $archive . '_post_content_alignment' )
-		->type( 'radio-image' )
 		->label( __( 'Content Alignment', 'page-builder-framework' ) )
-		->defaultValue( 'left' )
 		->choices( [
 			'left'   => WPBF_THEME_URI . '/inc/customizer/img/align-left.jpg',
 			'center' => WPBF_THEME_URI . '/inc/customizer/img/align-center.jpg',
 			'right'  => WPBF_THEME_URI . '/inc/customizer/img/align-right.jpg',
 		] )
 		->priority( 40 )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	// Background color.
 	wpbf_customizer_field()
 		->id( $archive . '_post_background_color' )
-		->type( 'color' )
 		->label( __( 'Background Color', 'page-builder-framework' ) )
-		->defaultValue( '#f5f5f7' )
 		->priority( 50 )
 		->properties( [
 			'mode' => 'alpha',
@@ -601,34 +540,34 @@ foreach ( $archives as $archive ) {
 				'value'    => 'boxed',
 			),
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	// Accent color.
 	wpbf_customizer_field()
 		->id( $archive . '_post_accent_color' )
-		->type( 'color' )
 		->label( __( 'Accent Color', 'page-builder-framework' ) )
 		->priority( 60 )
 		->properties( [
 			'mode' => 'alpha',
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	// Hover.
 	wpbf_customizer_field()
 		->id( $archive . '_post_accent_color_alt' )
-		->type( 'color' )
 		->label( __( 'Hover', 'page-builder-framework' ) )
 		->priority( 70 )
 		->properties( [
 			'mode' => 'alpha',
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	// Title size.
 	wpbf_customizer_field()
 		->id( $archive . '_post_title_size' )
-		->type( 'input-slider' )
 		->label( __( 'Title Font Size', 'page-builder-framework' ) )
 		->properties( [
 			'min'  => 0,
@@ -636,12 +575,12 @@ foreach ( $archives as $archive ) {
 			'step' => 1,
 		] )
 		->priority( 80 )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	// Font size.
 	wpbf_customizer_field()
 		->id( $archive . '_post_font_size' )
-		->type( 'input-slider' )
 		->label( __( 'Font Size', 'page-builder-framework' ) )
 		->properties( [
 			'min'  => 0,
@@ -649,6 +588,7 @@ foreach ( $archives as $archive ) {
 			'step' => 1,
 		] )
 		->priority( 90 )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	/* Beside */
@@ -671,9 +611,7 @@ foreach ( $archives as $archive ) {
 	// Image alignment.
 	wpbf_customizer_field()
 		->id( $archive . '_post_image_alignment' )
-		->type( 'radio-image' )
 		->label( __( 'Image Alignment', 'page-builder-framework' ) )
-		->defaultValue( 'left' )
 		->choices( [
 			'left'  => WPBF_THEME_URI . '/inc/customizer/img/align-left.jpg',
 			'right' => WPBF_THEME_URI . '/inc/customizer/img/align-right.jpg',
@@ -686,14 +624,13 @@ foreach ( $archives as $archive ) {
 				'value'    => 'beside',
 			),
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 	// Image width.
 	wpbf_customizer_field()
 		->id( $archive . '_post_image_width' )
-		->type( 'slider' )
 		->label( __( 'Image Width', 'page-builder-framework' ) )
-		->defaultValue( 40 )
 		->priority( 120 )
 		->properties( [
 			'min'  => 20,
@@ -707,6 +644,7 @@ foreach ( $archives as $archive ) {
 				'value'    => 'beside',
 			),
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $archive . '_options' );
 
 }
@@ -718,18 +656,16 @@ foreach ( $singles as $single ) {
 	// Width.
 	wpbf_customizer_field()
 		->id( $single . '_custom_width' )
-		->type( 'dimension' )
 		->label( __( 'Custom Content Width', 'page-builder-framework' ) )
 		->description( __( 'Default: 1200px', 'page-builder-framework' ) )
 		->priority( 0 )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $single . '_options' );
 
 	// Sidebar layout.
 	wpbf_customizer_field()
 		->id( $single . '_sidebar_layout' )
-		->type( 'select' )
 		->label( __( 'Sidebar', 'page-builder-framework' ) )
-		->defaultValue( 'global' )
 		->choices( [
 			'global' => __( 'Inherit Global Settings', 'page-builder-framework' ),
 			'right'  => __( 'Right', 'page-builder-framework' ),
@@ -749,13 +685,7 @@ foreach ( $singles as $single ) {
 	// Header.
 	wpbf_customizer_field()
 		->id( $single . '_sortable_header' )
-		->type( 'sortable' )
 		->label( __( 'Header', 'page-builder-framework' ) )
-		->defaultValue( array(
-			'title',
-			'meta',
-			'featured',
-		) )
 		->choices( array(
 			'title'    => __( 'Title', 'page-builder-framework' ),
 			'meta'     => __( 'Meta Data', 'page-builder-framework' ),
@@ -767,12 +697,7 @@ foreach ( $singles as $single ) {
 	// Footer.
 	wpbf_customizer_field()
 		->id( $single . '_sortable_footer' )
-		->type( 'sortable' )
 		->label( __( 'Footer', 'page-builder-framework' ) )
-		->defaultValue( array(
-			'readmore',
-			'categories',
-		) )
 		->choices( array(
 			'readmore'   => __( 'Read More', 'page-builder-framework' ),
 			'categories' => __( 'Categories', 'page-builder-framework' ),
@@ -793,9 +718,7 @@ foreach ( $singles as $single ) {
 		// Toggle.
 		wpbf_customizer_field()
 			->id( $single . '_disable_comments' )
-			->type( 'toggle' )
 			->label( __( 'Disable Comments', 'page-builder-framework' ) )
-			->defaultValue( false )
 			->priority( 0 )
 			->addToSection( 'wpbf_' . $single . '_options' );
 
@@ -811,9 +734,7 @@ foreach ( $singles as $single ) {
 	// Post navigation.
 	wpbf_customizer_field()
 		->id( $single . '_post_nav' )
-		->type( 'select' )
 		->label( __( 'Post Navigation', 'page-builder-framework' ) )
-		->defaultValue( 'show' )
 		->choices( [
 			'show'    => __( 'Previous/Next Post', 'page-builder-framework' ),
 			'default' => __( 'Post Title', 'page-builder-framework' ),
@@ -825,9 +746,7 @@ foreach ( $singles as $single ) {
 	// Style.
 	wpbf_customizer_field()
 		->id( $single . '_post_style' )
-		->type( 'select' )
 		->label( __( 'Style', 'page-builder-framework' ) )
-		->defaultValue( 'plain' )
 		->choices( [
 			'plain' => __( 'Default', 'page-builder-framework' ),
 			'boxed' => __( 'Boxed', 'page-builder-framework' ),
@@ -838,9 +757,7 @@ foreach ( $singles as $single ) {
 	// Stretch image.
 	wpbf_customizer_field()
 		->id( $single . '_boxed_image_stretched' )
-		->type( 'toggle' )
 		->label( __( 'Stretch Featured Image', 'page-builder-framework' ) )
-		->defaultValue( false )
 		->priority( 0 )
 		->activeCallback( [
 			array(
@@ -854,7 +771,6 @@ foreach ( $singles as $single ) {
 	// Padding.
 	wpbf_customizer_field()
 		->id( $single . '_boxed_padding' )
-		->type( 'responsive-padding' )
 		->label( __( 'Padding', 'page-builder-framework' ) )
 		->priority( 10 )
 		->activeCallback( [
@@ -865,17 +781,15 @@ foreach ( $singles as $single ) {
 			),
 		] )
 		->properties( [
-			'save_as_json'   => true,
 			'dont_save_unit' => true,
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $single . '_options' );
 
 	// Background color.
 	wpbf_customizer_field()
 		->id( $single . '_post_background_color' )
-		->type( 'color' )
 		->label( __( 'Background Color', 'page-builder-framework' ) )
-		->defaultValue( '#f5f5f7' )
 		->priority( 20 )
 		->properties( [
 			'mode' => 'alpha',
@@ -887,12 +801,12 @@ foreach ( $singles as $single ) {
 				'value'    => 'boxed',
 			),
 		] )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $single . '_options' );
 
 	// Title size.
 	wpbf_customizer_field()
 		->id( $single . '_post_title_size' )
-		->type( 'input-slider' )
 		->label( __( 'Title Font Size', 'page-builder-framework' ) )
 		->properties( [
 			'min'  => 0,
@@ -900,12 +814,12 @@ foreach ( $singles as $single ) {
 			'step' => 1,
 		] )
 		->priority( 20 )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $single . '_options' );
 
 	// Font size.
 	wpbf_customizer_field()
 		->id( $single . '_post_font_size' )
-		->type( 'input-slider' )
 		->label( __( 'Font Size', 'page-builder-framework' ) )
 		->properties( [
 			'min'  => 0,
@@ -913,6 +827,7 @@ foreach ( $singles as $single ) {
 			'step' => 1,
 		] )
 		->priority( 20 )
+		->transport( 'postMessage' )
 		->addToSection( 'wpbf_' . $single . '_options' );
 
 }

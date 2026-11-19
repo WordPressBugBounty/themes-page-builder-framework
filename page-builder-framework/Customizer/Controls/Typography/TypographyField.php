@@ -3,6 +3,7 @@
 namespace Mapsteps\Wpbf\Customizer\Controls\Typography;
 
 use Mapsteps\Wpbf\Customizer\Controls\Base\BaseField;
+use Mapsteps\Wpbf\Customizer\CustomizerAssets;
 use Mapsteps\Wpbf\Customizer\Entities\CustomizerControlEntity;
 use Mapsteps\Wpbf\Customizer\Entities\CustomizerSettingEntity;
 
@@ -100,22 +101,19 @@ class TypographyField extends BaseField {
 	 */
 	public function enqueueControlScripts() {
 
-		// Enqueue the styles.
-		wp_enqueue_style( 'wpbf-typography-control', WPBF_THEME_URI . '/Customizer/Controls/Typography/dist/typography-control-min.css', array(), WPBF_VERSION );
-
-		// Enqueue the scripts.
-		wp_enqueue_script( 'wpbf-typography-control', WPBF_THEME_URI . '/Customizer/Controls/Typography/dist/typography-control-min.js', array( 'customize-controls' ), WPBF_VERSION, false );
+		// The typography script is part of the controls' script.
+		CustomizerAssets::enqueue();
 
 		// JS object inside this block will only be printed once.
 		if ( ! TypographyStore::$control_vars_printed ) {
-			wp_localize_script( 'wpbf-typography-control', 'wpbfFontVariantOptions', [
+			wp_localize_script( CustomizerAssets::HANDLE, 'wpbfFontVariantOptions', [
 				'standard' => FontsStore::$standard_font_variant_options,
 				'complete' => FontsStore::$complete_font_variant_options,
 			] );
 
-			wp_localize_script( 'wpbf-typography-control', 'wpbfFontProperties', $this->font_properties );
-			wp_localize_script( 'wpbf-typography-control', 'wpbfGoogleFonts', ( new GoogleFontsUtil() )->getCollections() );
-			wp_add_inline_script( 'wpbf-typography-control', 'const wpbfFieldsFontVariants = {};', 'before' );
+			wp_localize_script( CustomizerAssets::HANDLE, 'wpbfFontProperties', $this->font_properties );
+			wp_localize_script( CustomizerAssets::HANDLE, 'wpbfGoogleFonts', ( new GoogleFontsUtil() )->getCollections() );
+			wp_add_inline_script( CustomizerAssets::HANDLE, 'const wpbfFieldsFontVariants = {};', 'before' );
 
 			TypographyStore::$control_vars_printed = true;
 		}
@@ -129,27 +127,10 @@ class TypographyField extends BaseField {
 
 		// JS object here will be printed for each field.
 		wp_add_inline_script(
-			'wpbf-typography-control',
+			CustomizerAssets::HANDLE,
 			'wpbfFieldsFontVariants.' . $field_variant_key . ' = ' . wp_json_encode( $field_variant_values ) . ';',
 			'before'
 		);
-
-	}
-
-	/**
-	 * Enqueue styles & scripts on 'customize_preview_init' action.
-	 */
-	public function enqueuePreviewScripts() {
-
-		// Enqueue the scripts.
-		wp_enqueue_script( 'wpbf-typography-preview', WPBF_THEME_URI . '/Customizer/Controls/Typography/dist/typography-preview-min.js', array( 'customize-preview' ), WPBF_VERSION, false );
-
-		// JS object inside this block will only be printed once.
-		if ( ! TypographyStore::$preview_vars_printed ) {
-			wp_localize_script( 'wpbf-typography-preview', 'wpbfGoogleFontNames', FontsStore::$google_font_names );
-
-			TypographyStore::$preview_vars_printed = true;
-		}
 
 	}
 
@@ -215,7 +196,36 @@ class TypographyField extends BaseField {
 		if ( isset( $this->default_value['font-family'] ) ) {
 			$this->addFontFamilyField();
 			$this->addFontVariantField();
+
+			add_filter( 'pre_set_theme_mod_' . $this->control->id, array( $this, 'syncWeightAndStyle' ) );
 		}
+
+	}
+
+	/**
+	 * Keep the saved font weight and style in step with the saved variant.
+	 *
+	 * The font family and variant selects are settings of their own (`id[font-family]`, `id[variant]`). WordPress saves
+	 * them after the typography setting, each on top of the value as it was when the save started, so a save that changed
+	 * the variant kept the old weight and style next to it. The front end reads the variant, but the Customizer composed
+	 * the value again on the next visit and opened with unsaved changes.
+	 *
+	 * @param mixed $value The value about to be saved.
+	 *
+	 * @return mixed
+	 */
+	public function syncWeightAndStyle( $value ) {
+
+		if ( ! is_array( $value ) || empty( $value['variant'] ) || ! is_string( $value['variant'] ) ) {
+			return $value;
+		}
+
+		$from_variant = ( new TypographySanitizer() )->sanitize( array( 'variant' => $value['variant'] ) );
+
+		$value['font-weight'] = $from_variant['font-weight'];
+		$value['font-style']  = $from_variant['font-style'];
+
+		return $value;
 
 	}
 
@@ -227,7 +237,7 @@ class TypographyField extends BaseField {
 	 * @return array
 	 */
 	public function sanitizeCallback( $value ) {
-		return ( new TypographySanitizer() )->sanitize( $value, $this->control->id );
+		return ( new TypographySanitizer() )->sanitize( $value );
 	}
 
 	/**
@@ -330,27 +340,6 @@ class TypographyField extends BaseField {
 				'wrapper_attrs' => [
 					'data-wpbf-typography-control' => $this->control->id,
 					'data-wpbf-typography-type'    => 'variant',
-				],
-			] )
-			->addToSection( $this->control->section_id );
-
-	}
-
-	/**
-	 * Add the divider as the last field (currently not used).
-	 */
-	private function addDivider() {
-
-		wpbf_customizer_field()
-			->id( $this->control->id . '_separator' )
-			->type( 'divider' )
-			->tab( $this->tab )
-			->capability( $this->control->capability )
-			->priority( $this->control->priority )
-			->activeCallback( $this->active_callback_args )
-			->properties( [
-				'wrapper_attrs' => [
-					'gap' => 'small',
 				],
 			] )
 			->addToSection( $this->control->section_id );

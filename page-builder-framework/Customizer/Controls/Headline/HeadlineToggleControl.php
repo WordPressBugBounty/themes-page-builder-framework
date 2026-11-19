@@ -2,10 +2,20 @@
 
 namespace Mapsteps\Wpbf\Customizer\Controls\Headline;
 
-use Mapsteps\Wpbf\Customizer\Controls\Checkbox\ToggleControl;
+use Mapsteps\Wpbf\Customizer\Controls\Checkbox\CheckboxControl;
 use WP_Customize_Manager;
 
-class HeadlineToggleControl extends ToggleControl {
+/**
+ * A toggle (wpbf-toggle) styled as a section headline.
+ */
+class HeadlineToggleControl extends CheckboxControl {
+
+	/**
+	 * Control's type.
+	 *
+	 * @var string
+	 */
+	public $type = 'wpbf-toggle';
 
 	/**
 	 * Constructor.
@@ -33,18 +43,6 @@ class HeadlineToggleControl extends ToggleControl {
 		} else {
 			$this->wrapper_attrs['class'] = '{default_class} ' . $headline_toggle_classname;
 		}
-
-	}
-
-	/**
-	 * Enqueue control related scripts/styles.
-	 */
-	public function enqueue() {
-
-		parent::enqueue();
-
-		// Enqueue the styles.
-		wp_enqueue_style( 'wpbf-headline-toggle-control', WPBF_THEME_URI . '/Customizer/Controls/Headline/dist/headline-toggle-control-min.css', array(), WPBF_VERSION );
 
 	}
 

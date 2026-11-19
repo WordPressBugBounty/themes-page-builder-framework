@@ -1,8 +1,4 @@
-import hooks from "@wordpress/hooks";
-import {
-	AnyWpbfCustomizeControl,
-	WpbfCustomize,
-} from "../../Base/src/interface";
+import { WpbfCustomize } from "../../Base/src/interface";
 import {
 	FontProperties,
 	FontProperty,
@@ -23,7 +19,6 @@ import "./typography-control.scss";
 
 declare var wp: {
 	customize: WpbfCustomize;
-	hooks: typeof hooks;
 };
 
 /**
@@ -51,7 +46,7 @@ function setupTypographyFields(customizer: WpbfCustomize) {
 		if (!customizer.control(id)) return;
 
 		customizer(id, function (setting) {
-			composeFontProperties(id, undefined, undefined, undefined);
+			composeFontProperties(id, undefined, undefined, undefined, true);
 
 			setting.bind(function (value) {
 				composeFontProperties(id, value, undefined, undefined);
@@ -76,7 +71,6 @@ function listenFontPropertyFieldsChange(typographyControlId: string) {
 					undefined,
 					property,
 					value,
-					true,
 				);
 			});
 		});
@@ -99,12 +93,38 @@ function variantFoundInChoices(
 	return variants.some((variant) => variant.id == variantValue);
 }
 
+/**
+ * Whether two typography values are the same apart from numbers saved as text ("400" and 400) and key order.
+ */
+function sameValue(
+	a: WpbfCustomizeTypographyControlValue,
+	b: WpbfCustomizeTypographyControlValue | undefined,
+) {
+	if (!b || "object" !== typeof b) return false;
+
+	const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+	const text = (v: unknown) => (null === v || undefined === v ? v : String(v));
+
+	return [...keys].every(
+		(key) =>
+			text((a as Record<string, unknown>)[key]) ===
+			text((b as Record<string, unknown>)[key]),
+	);
+}
+
+/**
+ * Compose the typography value from its font family and variant (font style and weight follow the variant) and show
+ * the variants of the chosen font in the variant select.
+ *
+ * @param onLoad When the Customizer opens: the value is only written when it really changes (a font weight saved as
+ *               "400" stays as it is), so opening the Customizer doesn't leave unsaved changes.
+ */
 function composeFontProperties(
 	id: string,
 	val?: WpbfCustomizeTypographyControlValue,
 	triggerPropertyName?: FontProperty,
 	triggerPropertyValue?: string,
-	triggerChange?: boolean,
+	onLoad?: boolean,
 ) {
 	const control: WpbfCustomizeAssocArrayControl | undefined =
 		wp.customize?.control(id);
@@ -160,15 +180,9 @@ function composeFontProperties(
 		// Update the `variantValue` with the updated option value.
 		variantValue = updatedOptionValue;
 
-		const $variantSelectbox = variantControl.container?.find(".wpbf-select2");
-
-		$variantSelectbox?.empty();
-		$variantSelectbox?.append(
-			variantChoices.map((choice) => {
-				return new Option(choice.text, choice.id, false, false);
-			}),
-		);
-		$variantSelectbox?.val(variantValue);
+		// The variant select lists this font's variants and shows the variant, without changing its own setting.
+		variantControl.setChoices?.(variantChoices);
+		variantControl.showValue?.(variantValue);
 		value["variant"] = variantValue;
 	}
 
@@ -187,20 +201,9 @@ function composeFontProperties(
 				? parseInt(variantValue, 10)
 				: 400;
 
-	if (triggerChange) {
-		// value["random"] = Date.now();
-	}
+	if (onLoad && sameValue(value, control.setting.get())) return;
 
 	control.setting.set(value);
-
-	wp.hooks.addAction(
-		"wpbf.dynamicControl.initWpbfControl",
-		"wpbf",
-		function (controlInit: AnyWpbfCustomizeControl) {
-			if (variantControl && id + "[variant]" === controlInit.id) {
-			}
-		},
-	);
 }
 
 function collectVariantChoices(

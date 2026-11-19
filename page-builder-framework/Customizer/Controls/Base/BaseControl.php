@@ -7,7 +7,7 @@
 
 namespace Mapsteps\Wpbf\Customizer\Controls\Base;
 
-use Mapsteps\Wpbf\Customizer\Controls\Responsive\ResponsiveUtil;
+use Mapsteps\Wpbf\Customizer\CustomizerAssets;
 use WP_Customize_Control;
 use WP_Customize_Manager;
 use WP_Customize_Setting;
@@ -25,20 +25,6 @@ class BaseControl extends WP_Customize_Control {
 	protected $section_id = '';
 
 	/**
-	 * Used to generate css variables.
-	 *
-	 * @var string
-	 */
-	public $css_vars = '';
-
-	/**
-	 * Used to automatically generate all CSS output.
-	 *
-	 * @var array
-	 */
-	public $output = array();
-
-	/**
 	 * Wrapper attributes.
 	 *
 	 * The value of this property will be rendered to the wrapper element.
@@ -54,13 +40,6 @@ class BaseControl extends WP_Customize_Control {
 	 * @var bool
 	 */
 	public $allow_collapse = false;
-
-	/**
-	 * React version.
-	 *
-	 * @var string
-	 */
-	private $react_version = '18.3.1';
 
 	/**
 	 * Constructor.
@@ -92,48 +71,11 @@ class BaseControl extends WP_Customize_Control {
 	}
 
 	/**
-	 * Enqueue control related scripts/styles.
+	 * Enqueue control related scripts/styles: every control type is in one script and one stylesheet.
 	 */
 	public function enqueue() {
 
-		$react_version = $this->react_version;
-
-		if ( ! wp_script_is( 'react', 'registered' ) ) {
-			wp_register_script(
-				'react',
-				WPBF_THEME_URI . '/Customizer/Controls/Base/libs/react.min.js',
-				array(),
-				$react_version,
-				true
-			);
-		}
-
-		if ( ! wp_script_is( 'react-dom', 'registered' ) ) {
-			wp_register_script(
-				'react-dom',
-				WPBF_THEME_URI . '/Customizer/Controls/Base/libs/react.dom-min.js',
-				array( 'react' ),
-				$react_version,
-				true
-			);
-		}
-
-		if ( ! wp_script_is( 'react-jsx-runtime', 'registered' ) ) {
-			wp_register_script(
-				'react-jsx-runtime',
-				WPBF_THEME_URI . '/Customizer/Controls/Base/libs/react-jsx-runtime.min.js',
-				array( 'react' ),
-				$react_version,
-				true
-			);
-		}
-
-		// Enqueue the styles.
-		wp_enqueue_style( 'wpbf-base-control', WPBF_THEME_URI . '/Customizer/Controls/Base/dist/base-control-min.css', array(), WPBF_VERSION );
-		( new ResponsiveUtil() )->enqueueAssets();
-
-		// Enqueue the scripts.
-		wp_enqueue_script( 'wpbf-base-control', WPBF_THEME_URI . '/Customizer/Controls/Base/dist/base-control-min.js', array( 'jquery', 'react', 'react-dom', 'react-jsx-runtime', 'customize-controls' ), WPBF_VERSION, false );
+		CustomizerAssets::enqueue();
 
 	}
 
@@ -152,9 +94,6 @@ class BaseControl extends WP_Customize_Control {
 			$this->json['default'] = $this->setting->default;
 		}
 
-		// CSS Output.
-		$this->json['output'] = $this->output;
-
 		// Value.
 		$this->json['value'] = $this->value();
 
@@ -167,9 +106,6 @@ class BaseControl extends WP_Customize_Control {
 		// The ID.
 		$this->json['id'] = $this->id;
 
-		// The ajax url in case we need it.
-		$this->json['ajaxurl'] = admin_url( 'admin-ajax.php' );
-
 		// Input attributes.
 		$this->json['inputAttrs'] = '';
 
@@ -181,9 +117,6 @@ class BaseControl extends WP_Customize_Control {
 
 		// Input id.
 		$this->json['inputId'] = '_customize-input-' . $this->id;
-
-		// The CSS-Variables.
-		$this->json['css-var'] = $this->css_vars;
 
 		// Wrapper Attributes.
 		$this->json['wrapperAttrs'] = $this->wrapper_attrs;
@@ -201,21 +134,6 @@ class BaseControl extends WP_Customize_Control {
 
 		$id    = 'customize-control-' . str_replace( array( '[', ']' ), array( '-', '' ), $this->id );
 		$class = 'customize-control wpbf-customize-control wpbf-customize-control-' . $type_class;
-		$gap   = isset( $this->wrapper_opts['gap'] ) ? $this->wrapper_opts['gap'] : 'default';
-		$tag   = isset( $this->wrapper_opts['tag'] ) ? $this->wrapper_opts['tag'] : 'li';
-
-		switch ( $gap ) {
-			case 'small':
-				$class .= ' customize-control-has-small-gap';
-				break;
-
-			case 'none':
-				$class .= ' customize-control-is-gapless';
-				break;
-
-			default:
-				break;
-		}
 
 		if ( isset( $this->wrapper_attrs['id'] ) ) {
 			$id = $this->wrapper_attrs['id'];
@@ -244,9 +162,9 @@ class BaseControl extends WP_Customize_Control {
 		}
 
 		// phpcs:ignore
-		printf( '<' . esc_attr( $tag ) . ' id="%s" class="%s"%s>', esc_attr( $id ), esc_attr( $class ), $data_attrs );
+		printf( '<li id="%s" class="%s"%s>', esc_attr( $id ), esc_attr( $class ), $data_attrs );
 		$this->render_content();
-		echo '</' . esc_attr( $tag ) . '>';
+		echo '</li>';
 
 	}
 

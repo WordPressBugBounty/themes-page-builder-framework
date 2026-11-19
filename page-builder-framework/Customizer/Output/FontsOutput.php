@@ -4,8 +4,7 @@ namespace Mapsteps\Wpbf\Customizer\Output;
 
 use Mapsteps\Wpbf\Customizer\Controls\Typography\FontsStore;
 use Mapsteps\Wpbf\Customizer\Controls\Typography\FontsUtil;
-use Mapsteps\Wpbf\Customizer\Controls\Typography\TypographyStore;
-use Mapsteps\Wpbf\Customizer\CustomizerStore;
+use Mapsteps\Wpbf\Customizer\Schema\OptionSchema;
 
 class FontsOutput {
 
@@ -25,6 +24,27 @@ class FontsOutput {
 	 * @var string
 	 */
 	private $min_fonts_system_version = '2.11.0.8';
+
+	/**
+	 * The option listing fonts whose download failed, with the time of their next try.
+	 *
+	 * @var string
+	 */
+	const FAILED_OPTION = 'wpbf_google_fonts_failed';
+
+	/**
+	 * The font variants a typography option can hold (the keys of FontsStore's complete variants).
+	 *
+	 * @var string[]
+	 */
+	const FONT_VARIANTS = array( 'regular', 'italic', '100', '100italic', '200', '200italic', '300', '300italic', '500', '500italic', '600', '600italic', '700', '700italic', '800', '800italic', '900', '900italic' );
+
+	/**
+	 * Whether font families are Google fonts, by family.
+	 *
+	 * @var bool[]
+	 */
+	private $is_google_font = array();
 
 	/**
 	 * `FontsOutput` constructor.
@@ -68,9 +88,15 @@ class FontsOutput {
 	/**
 	 * Generate Google Fonts CSS.
 	 *
+	 * Fonts that aren't downloaded yet are downloaded only when $download is true (cache refresh on cron, Customizer
+	 * preview). Otherwise a refresh is scheduled for them. Fonts whose download failed are retried after a pause that
+	 * grows with each failure (see FAILED_OPTION).
+	 *
+	 * @param bool $download Whether missing fonts may be downloaded now.
+	 *
 	 * @return string
 	 */
-	public function generateGoogleFontsCss() {
+	public function generateGoogleFontsCss( $download = true ) {
 
 		/**
 		 * An associative array of Google fonts to use in frontend.
@@ -101,8 +127,16 @@ class FontsOutput {
 
 		$existing_downloaded_css = $this->fonts_util->getDownloadedGoogleFontsCss();
 
+		$google_fonts_to_download = $this->withoutPausedFonts( $google_fonts_to_download );
+
+		if ( ! empty( $google_fonts_to_download ) && ! $download ) {
+			CustomizerCss::scheduleRefresh();
+			$google_fonts_to_download = [];
+		}
+
 		if ( ! empty( $google_fonts_to_download ) ) {
 			( new GoogleFontsDownload() )->download( $google_fonts_to_download );
+			$this->recordFailures( $google_fonts_to_download );
 
 			// Get the updated downloaded CSS.
 			$existing_downloaded_css = $this->fonts_util->getDownloadedGoogleFontsCss();
@@ -143,7 +177,29 @@ class FontsOutput {
 			}
 		}
 
-		return $google_fonts_css_to_print;
+		return $this->schemeRelativeFontUrls( $google_fonts_css_to_print );
+
+	}
+
+	/**
+	 * Make the local font file URLs scheme-relative (//example.com/wp-content/fonts/...).
+	 *
+	 * The stored @font-face rules carry the scheme of the request that downloaded them. Since downloads run on cron, that
+	 * can be http on an https site (a server cron), and browsers refuse to load http fonts on https pages.
+	 *
+	 * @param string $css The Google Fonts CSS.
+	 *
+	 * @return string
+	 */
+	private function schemeRelativeFontUrls( $css ) {
+
+		$fonts_url = content_url( '/fonts' );
+
+		return str_replace(
+			array( set_url_scheme( $fonts_url, 'https' ), set_url_scheme( $fonts_url, 'http' ) ),
+			preg_replace( '#^https?:#i', '', $fonts_url ),
+			$css
+		);
 
 	}
 
@@ -151,9 +207,118 @@ class FontsOutput {
 	 * Output the generated Google Fonts CSS as inline CSS.
 	 */
 	public function inlineGoogleFontsCss() {
+
+		// The preview shows unsaved choices: built live. Page views use the cache.
+		$css = CustomizerCss::enabled() ? CustomizerCss::current()['fonts'] : wpbf_minify_css( $this->generateGoogleFontsCss() );
+
+		if ( '' === $css ) {
+			return;
+		}
+
 		?>
-		<style class="wpbf-google-fonts"><?php echo wpbf_minify_css( $this->generateGoogleFontsCss() ); ?></style>
+		<style class="wpbf-google-fonts"><?php echo $css; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Font-face rules built from Google's stylesheet. ?></style>
 		<?php
+
+	}
+
+	/**
+	 * Leave out fonts whose download failed recently.
+	 *
+	 * @param array $font_families Font family => variants to download.
+	 *
+	 * @return array The fonts that may be downloaded now.
+	 */
+	private function withoutPausedFonts( $font_families ) {
+
+		$failed = $this->failedFonts();
+
+		foreach ( $font_families as $font_family => $variants ) {
+			foreach ( $variants as $i => $variant ) {
+				$key = $this->fontKey( $font_family, $variant );
+
+				if ( isset( $failed[ $key ]['next'] ) && $failed[ $key ]['next'] > time() ) {
+					unset( $font_families[ $font_family ][ $i ] );
+				}
+			}
+
+			if ( empty( $font_families[ $font_family ] ) ) {
+				unset( $font_families[ $font_family ] );
+			} else {
+				$font_families[ $font_family ] = array_values( $font_families[ $font_family ] );
+			}
+		}
+
+		return $font_families;
+
+	}
+
+	/**
+	 * After a download, remember which fonts failed and when to try them again (1 hour, then 4 times longer each time,
+	 * at most a week), and schedule that retry. Fonts that arrived are forgotten.
+	 *
+	 * @param array $font_families Font family => variants that were downloaded.
+	 */
+	private function recordFailures( $font_families ) {
+
+		$downloaded = $this->fonts_util->getDownloadedGoogleFontsCss();
+		$failed     = $this->failedFonts();
+		$before     = $failed;
+
+		foreach ( $font_families as $font_family => $variants ) {
+			$slug = $this->fonts_util->slugifyFontFamily( $font_family );
+
+			foreach ( $variants as $variant ) {
+				$key          = $this->fontKey( $font_family, $variant );
+				$variant_name = '400' === $variant ? 'regular' : $variant;
+
+				if ( ! empty( $downloaded[ $slug . '_' . $variant_name ] ) ) {
+					unset( $failed[ $key ] );
+					continue;
+				}
+
+				$tries          = isset( $failed[ $key ]['tries'] ) ? (int) $failed[ $key ]['tries'] + 1 : 1;
+				$failed[ $key ] = array(
+					'tries' => $tries,
+					'next'  => time() + min( WEEK_IN_SECONDS, HOUR_IN_SECONDS * pow( 4, min( $tries, 6 ) - 1 ) ),
+				);
+			}
+		}
+
+		if ( $failed !== $before ) {
+			update_option( self::FAILED_OPTION, $failed, false );
+		}
+
+		if ( ! empty( $failed ) ) {
+			CustomizerCss::scheduleRefresh( max( 0, min( wp_list_pluck( $failed, 'next' ) ) - time() ) );
+		}
+
+	}
+
+	/**
+	 * Fonts whose download failed: key => [ 'tries' => count, 'next' => timestamp of the next try ].
+	 *
+	 * @return array
+	 */
+	private function failedFonts() {
+
+		$failed = get_option( self::FAILED_OPTION, array() );
+
+		return is_array( $failed ) ? $failed : array();
+
+	}
+
+	/**
+	 * The key of a font variant in the failure list.
+	 *
+	 * @param string $font_family The font family.
+	 * @param string $variant The variant.
+	 *
+	 * @return string
+	 */
+	private function fontKey( $font_family, $variant ) {
+
+		return $this->fonts_util->slugifyFontFamily( $font_family ) . '_' . ( '400' === $variant ? 'regular' : $variant );
+
 	}
 
 	/**
@@ -163,23 +328,17 @@ class FontsOutput {
 	 */
 	private function googleFontsToUse() {
 
-		$control_ids    = TypographyStore::$added_control_ids;
+		// Typography options: the theme's from the schema, others' (child themes, plugins) as their fields declared them.
 		$control_values = [];
 
-		foreach ( $control_ids as $control_id ) {
-			$setting_entity = CustomizerStore::findSettingByControlId( $control_id );
-
-			if ( ! $setting_entity ) {
-				continue;
-			}
-
-			$value = 'theme_mod' === $setting_entity->type ? get_theme_mod( $setting_entity->id ) : get_option( $setting_entity->id );
+		foreach ( OptionSchema::ofType( 'typography' ) as $option_id => $entry ) {
+			$value = isset( $entry['storage'] ) && 'option' === $entry['storage'] ? get_option( $option_id ) : get_theme_mod( $option_id );
 
 			if ( ! $value ) {
 				continue;
 			}
 
-			$control_values[ $setting_entity->id ] = $value;
+			$control_values[ $option_id ] = $value;
 		}
 
 		/**
@@ -203,7 +362,7 @@ class FontsOutput {
 				continue;
 			}
 
-			if ( ! isset( FontsStore::$google_fonts[ $google_font_family ] ) ) {
+			if ( ! $this->isGoogleFont( $google_font_family ) ) {
 				continue;
 			}
 
@@ -217,7 +376,7 @@ class FontsOutput {
 				continue;
 			}
 
-			if ( ! isset( FontsStore::$complete_font_variants[ $font_variant ] ) ) {
+			if ( ! in_array( $font_variant, self::FONT_VARIANTS, true ) ) {
 				continue;
 			}
 
@@ -241,6 +400,48 @@ class FontsOutput {
 		}
 
 		return $google_fonts_to_use;
+
+	}
+
+	/**
+	 * Whether a font family is a Google font.
+	 *
+	 * Avoids loading the Google font list (1,800 fonts) on page views: a family with downloaded CSS is one, a font stack
+	 * (it has a comma) is not. Only other families (custom fonts, Google fonts not downloaded yet) need the list.
+	 *
+	 * @param string $font_family The font family.
+	 *
+	 * @return bool
+	 */
+	private function isGoogleFont( $font_family ) {
+
+		if ( isset( $this->is_google_font[ $font_family ] ) ) {
+			return $this->is_google_font[ $font_family ];
+		}
+
+		$prefix = $this->fonts_util->slugifyFontFamily( $font_family ) . '_';
+
+		foreach ( array_keys( $this->fonts_util->getDownloadedGoogleFontsCss() ) as $key ) {
+			if ( 0 === strpos( $key, $prefix ) ) {
+				$this->is_google_font[ $font_family ] = true;
+
+				return true;
+			}
+		}
+
+		if ( false !== strpos( $font_family, ',' ) ) {
+			$this->is_google_font[ $font_family ] = false;
+
+			return false;
+		}
+
+		if ( ! FontsStore::initialized() ) {
+			FontsStore::init();
+		}
+
+		$this->is_google_font[ $font_family ] = isset( FontsStore::$google_fonts[ $font_family ] );
+
+		return $this->is_google_font[ $font_family ];
 
 	}
 

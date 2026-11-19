@@ -118,7 +118,7 @@ function wpbf_edd_sidebar_layout( $sidebar ) {
 
 	if ( wpbf_is_edd_single() ) {
 
-		$edd_single_sidebar_layout = get_theme_mod( 'edd_single_sidebar_layout', 'global' );
+		$edd_single_sidebar_layout = wpbf_mod( 'edd_single_sidebar_layout' );
 		$single_sidebar_layout     = get_post_meta( get_the_ID(), 'wpbf_sidebar_position', true );
 
 		if ( 'global' !== $edd_single_sidebar_layout ) {
@@ -133,7 +133,7 @@ function wpbf_edd_sidebar_layout( $sidebar ) {
 
 	if ( wpbf_is_edd_archive() ) {
 
-		$edd_sidebar_layout = get_theme_mod( 'edd_sidebar_layout', 'global' );
+		$edd_sidebar_layout = wpbf_mod( 'edd_sidebar_layout' );
 
 		if ( 'global' !== $edd_sidebar_layout ) {
 			$sidebar = $edd_sidebar_layout;
@@ -152,7 +152,7 @@ add_filter( 'wpbf_sidebar_layout', 'wpbf_edd_sidebar_layout' );
 function wpbf_edd_menu_item( $markup = 'li' ) {
 
 	if ( wpbf_svg_enabled() ) {
-		$icon = apply_filters( 'wpbf_edd_menu_item_icon', wpbf_svg( 'cart' )  );
+		$icon = apply_filters( 'wpbf_edd_menu_item_icon', wpbf_svg( 'cart' ) );
 	} else {
 		$icon = apply_filters( 'wpbf_edd_menu_item_icon', '<i class="wpbff wpbff-' . esc_attr( get_theme_mod( 'edd_menu_item_icon', 'cart' ) ) . '"></i>' );
 	}

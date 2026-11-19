@@ -1,9 +1,19 @@
 <?php
+/**
+ * Radio control.
+ *
+ * @package Wpbf
+ */
 
 namespace Mapsteps\Wpbf\Customizer\Controls\Radio;
 
 use Mapsteps\Wpbf\Customizer\Controls\Base\BaseControl;
 
+/**
+ * One control for the radio types: wpbf-radio (a list), wpbf-radio-buttonset (buttons) and wpbf-radio-image (images).
+ *
+ * The type comes from `$args['type']` (default wpbf-radio); the form picks its layout from it (RadioForm.tsx).
+ */
 class RadioControl extends BaseControl {
 
 	/**
@@ -14,65 +24,26 @@ class RadioControl extends BaseControl {
 	public $type = 'wpbf-radio';
 
 	/**
-	 * Enqueue control related scripts/styles.
+	 * Refresh the parameters passed to the JavaScript via JSON.
 	 */
-	public function enqueue() {
+	public function to_json() {
 
-		parent::enqueue();
+		parent::to_json();
 
-		// Enqueue the styles.
-		wp_enqueue_style( 'wpbf-radio-control', WPBF_THEME_URI . '/Customizer/Controls/Radio/dist/radio-control-min.css', array(), WPBF_VERSION );
+		if ( 'wpbf-radio-image' !== $this->type ) {
+			return;
+		}
 
-		// Enqueue the scripts.
-		wp_enqueue_script(
-			'wpbf-radio-control',
-			WPBF_THEME_URI . '/Customizer/Controls/Radio/dist/radio-control-min.js',
-			array( 'wpbf-base-control' ),
-			WPBF_VERSION,
-			false
-		);
+		// The image radios put a `style` input attribute on the image labels too.
+		foreach ( $this->input_attrs as $attr => $value ) {
+			if ( 'style' !== $attr ) {
+				$this->json['inputAttrs'] .= $attr . '="' . esc_attr( $value ) . '" ';
+				continue;
+			}
 
-	}
+			$this->json['labelStyle'] = 'style="' . esc_attr( $value ) . '" ';
+		}
 
-	/**
-	 * An Underscore (JS) template for this control's content (but not its container).
-	 *
-	 * Class variables for this control class are available in the `data` JS object;
-	 * export custom variables by overriding WP_Customize_Control::to_json().
-	 *
-	 * @see WP_Customize_Control::print_template()
-	 */
-	protected function content_template() {
-		?>
-
-		<span class="customize-control-title">{{{ data.label }}}</span>
-
-		<# if ( data.description ) { #>
-		<span class="description customize-control-description">{{{ data.description }}}</span>
-		<# } #>
-
-		<# _.each( data.choices, function( val, key ) { #>
-		<label for="_customize-input-{{ data.id }}_{{ key }}">
-			<input
-				type="radio"
-				id="_customize-input-{{ data.id }}_{{ key }}"
-				name="_customize-radio-{{ data.id }}"
-				value="{{ key }}"
-				data-id="{{ data.id }}"
-				{{{ data.inputAttrs }}}
-				{{ data.link }}
-			<# if ( data.value === key ) { #> checked<# } #>
-			>
-
-			<# if ( Array.isArray( val ) ) { #>
-			{{{ val[0] }}}<span class="option-description">{{{ val[1] }}}</span>
-			<# } else { #>
-			{{ val }}
-			<# } #>
-		</label>
-		<# } ); #>
-
-		<?php
 	}
 
 }

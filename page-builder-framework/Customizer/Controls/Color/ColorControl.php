@@ -58,27 +58,6 @@ class ColorControl extends BaseControl {
 	public $color_swatches = array();
 
 	/**
-	 * Enqueue control related scripts/styles.
-	 */
-	public function enqueue() {
-
-		parent::enqueue();
-
-		// Enqueue the styles.
-		wp_enqueue_style( 'wpbf-color-control', WPBF_THEME_URI . '/Customizer/Controls/Color/dist/color-control-min.css', array(), WPBF_VERSION );
-
-		// Enqueue the scripts.
-		wp_enqueue_script(
-			'wpbf-color-control',
-			WPBF_THEME_URI . '/Customizer/Controls/Color/dist/color-control-min.js',
-			array( 'wpbf-base-control' ),
-			WPBF_VERSION,
-			false
-		);
-
-	}
-
-	/**
 	 * Refresh the parameters passed to the JavaScript via JSON.
 	 */
 	public function to_json() {

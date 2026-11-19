@@ -14,6 +14,9 @@ use Mapsteps\Wpbf\Customizer\CustomizerField;
 use Mapsteps\Wpbf\Customizer\CustomizerPanel;
 use Mapsteps\Wpbf\Customizer\CustomizerSection;
 use Mapsteps\Wpbf\Customizer\CustomizerSetting;
+use Mapsteps\Wpbf\Customizer\Output\CssRules;
+use Mapsteps\Wpbf\Customizer\Output\CustomizerCss;
+use Mapsteps\Wpbf\Customizer\Schema\OptionSchema;
 
 /**
  * Initialize Wpbf customizer.
@@ -88,14 +91,43 @@ function wpbf_customizer_field() {
 
 }
 
+/**
+ * Read a Customizer option: the saved value, or its default if nothing is saved.
+ *
+ * The value comes back ready to use: options saved as JSON text as arrays, toggles as true/false,
+ * sliders and numbers as int or float. Defaults come from the option schema (Customizer/Schema), or for
+ * fields registered by Premium, child themes and plugins, from the default they declared. In the Customizer
+ * preview it returns the previewed value, like get_theme_mod().
+ *
+ * @param string $id The option id.
+ *
+ * @return mixed The value. False for unknown options that aren't saved (like get_theme_mod()).
+ */
+function wpbf_mod( $id ) {
+
+	static $not_saved = null;
+
+	if ( null === $not_saved ) {
+		$not_saved = new stdClass();
+	}
+
+	$entry = OptionSchema::find( $id );
+	$value = isset( $entry['storage'] ) && 'option' === $entry['storage'] ? get_option( $id, $not_saved ) : get_theme_mod( $id, $not_saved );
+
+	if ( null === $entry ) {
+		return $not_saved === $value ? false : $value;
+	}
+
+	if ( $not_saved === $value ) {
+		return OptionSchema::defaultValue( $entry );
+	}
+
+	return OptionSchema::typed( $entry, $value );
+
+}
+
+// Kirki safety net for Premium 2.9 and older and code written for Kirki (frozen, see the file).
 require_once WPBF_THEME_DIR . '/Customizer/Compatibility/kirki-compatibility.php';
-require_once WPBF_THEME_DIR . '/Customizer/Compatibility/kirki-panel-section-compatibility.php';
-require_once WPBF_THEME_DIR . '/Customizer/Compatibility/kirki-control-base-compatibility.php';
-require_once WPBF_THEME_DIR . '/Customizer/Compatibility/kirki-fields-compatibility.php';
-require_once WPBF_THEME_DIR . '/Customizer/Compatibility/kirki-unsupported-fields-compatibility.php';
-require_once WPBF_THEME_DIR . '/Customizer/Compatibility/kirki-pro-fields-compatibility.php';
-require_once WPBF_THEME_DIR . '/Customizer/Compatibility/kirki-class-aliases.php';
-require_once WPBF_THEME_DIR . '/Customizer/Compatibility/wpbf-old-controls-compatibility.php';
 
 if ( ! function_exists( 'wpbf_get_theme_mod_value' ) ) {
 
@@ -195,6 +227,95 @@ function wpbf_minify_css( $css ) {
 }
 
 /**
+ * Write one Customizer CSS block from option values (see inc/customizer/styles/general.php for how to use it).
+ *
+ * Prints the block when its options are set and differ from their defaults. In the Customizer preview, changes to
+ * these options show instantly.
+ *
+ * @param string $selector     The CSS selector.
+ * @param array  $declarations Property => value. Values hold option values as {option_id} or {option_id.key}.
+ * @param array  $args         'media' (breakpoint name like 'max-desktop', or a media query), 'always' (print even at
+ *                             the defaults), 'when' (an option that must be on), 'saved' (print whenever saved, even
+ *                             as the default) with 'unless' (not when saved exactly as this text), 'parts' (compare
+ *                             each part of a JSON option on its own). See inc/customizer/styles/general.php.
+ */
+function wpbf_css( $selector, $declarations, $args = array() ) {
+
+	CssRules::rule( $selector, $declarations, $args );
+
+}
+
+/**
+ * Print an area's Customizer CSS (inc/customizer/styles/<area>.php).
+ *
+ * @param string $area The area name.
+ */
+function wpbf_css_area( $area ) {
+
+	CssRules::area( $area );
+
+}
+
+/**
+ * A theme mod's saved value for Customizer CSS written in plain PHP, false when nothing is saved.
+ *
+ * Visitors get get_theme_mod() without a default: false when nothing is saved. In the Customizer preview
+ * get_theme_mod() hands over the registered default for an option nobody saved or changed; that counts as not saved
+ * too, so the preview prints what visitors get.
+ *
+ * @param string $id The option id.
+ *
+ * @return mixed The saved value, false for none.
+ */
+function wpbf_css_saved_mod( $id ) {
+
+	$value = get_theme_mod( $id );
+
+	return $value && ! CssRules::hasPreviewValue( $id ) ? false : $value;
+
+}
+
+/**
+ * Print a font block for Customizer CSS: the family, weight and style from a typography value (saved value only,
+ * see wpbf_css_saved_mod()), as the theme always printed them.
+ *
+ * '700italic' becomes 700 / italic, 'regular' 400 / normal; saved font-weight / font-style parts aren't used. A value
+ * saved as anything but a list of parts prints an empty block, as before.
+ *
+ * @param string $selector   The selector.
+ * @param mixed  $value      The typography value (nothing prints when it's empty).
+ * @param bool   $with_color Also print its color part (the logo font has one).
+ */
+function wpbf_css_font( $selector, $value, $with_color = false ) {
+
+	if ( ! $value ) {
+		return;
+	}
+
+	echo $selector . ' {'; // phpcs:ignore WordPress.Security.EscapeOutput -- Fixed selectors.
+
+	if ( ! empty( $value['font-family'] ) ) {
+		echo sprintf( 'font-family: %s;', wpbf_parse_font_family( $value['font-family'] ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- Escaped by wpbf_parse_font_family().
+	}
+
+	if ( ! empty( $value['variant'] ) ) {
+		$weight = str_replace( 'italic', '', $value['variant'] );
+		$weight = in_array( $weight, array( '', 'regular' ) ) ? '400' : $weight; // phpcs:ignore WordPress.PHP.StrictInArray -- As before (a variant saved as the number 400).
+		$style  = false !== strpos( $value['variant'], 'italic' ) ? 'italic' : 'normal';
+
+		echo sprintf( 'font-weight: %s;', esc_attr( $weight ) );
+		echo sprintf( 'font-style: %s;', esc_attr( $style ) );
+	}
+
+	if ( $with_color && ! empty( $value['color'] ) ) {
+		echo sprintf( 'color: %s;', esc_attr( $value['color'] ) );
+	}
+
+	echo '}';
+
+}
+
+/**
  * Generate customizer CSS.
  */
 function wpbf_generate_css() {
@@ -208,7 +329,10 @@ function wpbf_generate_css() {
 }
 
 /**
- * Create wpbf-customizer-styles.css file.
+ * Write the wpbf-customizer-styles.css file ("file" CSS mode) with the current CSS.
+ *
+ * Not hooked any more: the file is written when the CSS changes (see Customizer/Output/CustomizerCss.php).
+ * Kept for code that calls it.
  */
 function wpbf_create_customizer_css_file() {
 
@@ -216,56 +340,40 @@ function wpbf_create_customizer_css_file() {
 		return;
 	}
 
-	global $wp_filesystem;
-
-	if ( ! $wp_filesystem ) {
-		if ( ! function_exists( 'WP_Filesystem' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
+	// Never write unsaved Customizer changes into the file every visitor gets.
+	if ( is_customize_preview() ) {
+		return;
 	}
 
-	WP_Filesystem();
-
-	$upload_dir = wp_upload_dir();
-	$pbf_dir    = trailingslashit( $upload_dir['basedir'] ) . 'page-builder-framework/';
-	$css        = wpbf_generate_css();
-
-	// Create page-builder-framework folder if it doesn't exist.
-	if ( ! file_exists( $pbf_dir ) ) {
-		$wp_filesystem->mkdir( $pbf_dir );
-	}
-
-	// Create wpbf-customizer-styles.css file if it doesn't exist, otherwise attempt to update it.
-	if ( ! file_exists( $pbf_dir . 'page-builder-framework/wpbf-customizer-styles.css' ) ) {
-		$wp_filesystem->put_contents( $pbf_dir . 'wpbf-customizer-styles.css', $css, 0644 );
-	} elseif ( $css !== $wp_filesystem->get_contents( $pbf_dir . 'wpbf-customizer-styles.css' ) ) {
-		// Override the file only if changes were made in the customizer.
-		$wp_filesystem->put_contents( $pbf_dir . 'wpbf-customizer-styles.css', $css, 0644 );
-	}
+	CustomizerCss::writeFile( CustomizerCss::current()['css'] );
 
 }
-add_action( 'wp_loaded', 'wpbf_create_customizer_css_file' );
 
 /**
  * Enqueue customizer CSS.
+ *
+ * The CSS comes from the cache (built when settings change). The Customizer preview prints its live CSS itself
+ * (wpbf_customizer_preview_css()), so it's left out here.
  */
 function wpbf_customizer_frontend_scripts() {
+
+	if ( is_customize_preview() ) {
+		return;
+	}
 
 	$css_output = apply_filters( 'wpbf_css_output', 'inline' );
 
 	if ( 'inline' === $css_output ) {
 
-		$inline_styles = wpbf_generate_css();
-		wp_add_inline_style( apply_filters( 'wpbf_add_inline_style', 'wpbf-style' ), $inline_styles );
+		wp_add_inline_style( apply_filters( 'wpbf_add_inline_style', 'wpbf-style' ), CustomizerCss::current()['css'] );
 
 	} elseif ( 'file' === $css_output ) {
 
-		$upload_dir = wp_upload_dir();
-		$file_path  = $upload_dir['basedir'] . '/page-builder-framework/wpbf-customizer-styles.css';
-		$file_url   = $upload_dir['baseurl'] . '/page-builder-framework/wpbf-customizer-styles.css';
+		// Makes sure the file holds the current CSS (written only when it changed).
+		CustomizerCss::current();
 
-		if ( file_exists( $file_path ) ) {
-			wp_enqueue_style( 'wpbf-customizer', $file_url, '', filemtime( $file_path ) );
+		if ( file_exists( CustomizerCss::filePath() ) ) {
+			wp_enqueue_style( 'wpbf-customizer', CustomizerCss::fileUrl(), '', filemtime( CustomizerCss::filePath() ) );
 		}
 	}
 
@@ -281,12 +389,64 @@ function wpbf_customizer_preview_css() {
 		return;
 	}
 
-	echo '<style id="wpbf-customize-saved-styles">';
+	// Areas written with wpbf_css() get their own style tag, redrawn by preview-css.js.
+	CssRules::startSplit();
 	require WPBF_THEME_DIR . '/inc/customizer/styles.php';
-	echo '</style>';
+	$segments = CssRules::endSplit();
+
+	$plain = 0;
+	$areas = array();
+
+	foreach ( $segments as $segment ) {
+		if ( is_array( $segment ) ) {
+			echo '<style id="wpbf-css-' . esc_attr( $segment['area'] ) . '">' . $segment['css'] . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput -- CSS, values escaped when written.
+
+			$areas[ $segment['area'] ] = array_diff_key( $segment, array_flip( array( 'area', 'css' ) ) );
+			continue;
+		}
+
+		echo '<style id="wpbf-customize-saved-styles' . ( $plain ? '-' . ( $plain + 1 ) : '' ) . '">' . $segment . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput -- CSS.
+		++$plain;
+	}
+
+	wp_add_inline_script( 'wpbf-preview-css', 'window.wpbfCssAreas = ' . wp_json_encode( $areas, JSON_HEX_TAG ) . ';', 'before' );
 
 }
 add_action( 'wp_head', 'wpbf_customizer_preview_css', 999 );
+
+/**
+ * Selective refresh partials for the areas written with wpbf_css(): the preview asks PHP for an area's CSS again
+ * when an option it reads outside wpbf_css() changes (see inc/customizer/js/preview-css.js).
+ *
+ * @param WP_Customize_Manager $wp_customize The Customizer.
+ */
+function wpbf_customizer_css_partials( $wp_customize ) {
+
+	if ( ! isset( $wp_customize->selective_refresh ) ) {
+		return;
+	}
+
+	foreach ( CssRules::AREAS as $area ) {
+		$wp_customize->selective_refresh->add_partial(
+			'wpbf_css_' . $area,
+			array(
+				'type'                => 'wpbf_css',
+				'selector'            => '#wpbf-css-' . $area,
+				'settings'            => array(),
+				'capability'          => 'edit_theme_options',
+				'container_inclusive' => false,
+				'render_callback'     => function () use ( $area ) {
+					$data = CssRules::record( $area );
+					unset( $data['css'] );
+
+					return $data;
+				},
+			)
+		);
+	}
+
+}
+add_action( 'customize_register', 'wpbf_customizer_css_partials' );
 
 /**
  * Post message.
@@ -304,6 +464,17 @@ function wpbf_customizer_preview_js() {
 		true
 	);
 
+	wp_enqueue_script(
+		'wpbf-preview-css',
+		get_template_directory_uri() . '/inc/customizer/js/preview-css.js',
+		array(
+			'customize-preview',
+			'customize-selective-refresh',
+		),
+		WPBF_VERSION,
+		true
+	);
+
 }
 add_action( 'customize_preview_init', 'wpbf_customizer_preview_js' );
 
@@ -314,9 +485,6 @@ function wpbf_customizer_scripts_styles() {
 
 	wp_enqueue_style( 'wpbf-customizer', get_template_directory_uri() . '/inc/customizer/css/customizer.css', '', WPBF_VERSION );
 	wp_enqueue_script( 'wpbf-customizer', get_template_directory_uri() . '/inc/customizer/js/customizer.js', array( 'jquery' ), WPBF_VERSION, true );
-
-	wp_enqueue_style( 'responsive-controls', get_template_directory_uri() . '/inc/customizer/css/responsive-controls.css', '', WPBF_VERSION );
-	wp_enqueue_script( 'responsive-controls', get_template_directory_uri() . '/inc/customizer/js/responsive-controls.js', array( 'jquery' ), WPBF_VERSION, true );
 
 }
 add_action( 'customize_controls_print_styles', 'wpbf_customizer_scripts_styles' );
