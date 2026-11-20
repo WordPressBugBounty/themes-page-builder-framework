@@ -20,7 +20,7 @@ function wpbf_theme_settings_admin_body_class( $classes ) {
 
 	$screen = get_current_screen();
 
-	if ( $screen->id !== 'appearance_page_wpbf-premium' ) {
+	if ( 'appearance_page_wpbf-premium' !== $screen->id ) {
 		return $classes;
 	}
 
@@ -30,6 +30,20 @@ function wpbf_theme_settings_admin_body_class( $classes ) {
 
 }
 add_action( 'admin_body_class', 'wpbf_theme_settings_admin_body_class' );
+
+/**
+ * Print a Lucide icon (https://lucide.dev, ISC License) on the Theme Settings page.
+ *
+ * @param string $inner The icon's inner SVG markup (paths, circles, rects), fixed markup from the theme's templates.
+ * @param string $css_class The CSS class of the icon.
+ */
+function wpbf_theme_settings_icon( $inner, $css_class ) {
+
+	?>
+	<svg class="<?php echo esc_attr( $css_class ); ?>" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><?php echo $inner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed SVG markup from the theme's templates. ?></svg>
+	<?php
+
+}
 
 /**
  * Add theme settings.
@@ -58,7 +72,7 @@ function wpbf_theme_settings_callback() {
  */
 function wpbf_activation_notice_dismissal() {
 
-	$nonce   = isset( $_POST['nonce'] ) ? $_POST['nonce'] : 0;
+	$nonce   = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 	$dismiss = isset( $_POST['dismiss'] ) ? absint( $_POST['dismiss'] ) : 0;
 
 	if ( empty( $dismiss ) ) {
@@ -67,6 +81,10 @@ function wpbf_activation_notice_dismissal() {
 
 	if ( ! wp_verify_nonce( $nonce, 'WPBF_Dismiss_Activation_Notice' ) ) {
 		wp_send_json_error( 'Invalid Token' );
+	}
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( 'Not allowed' );
 	}
 
 	update_option( 'wpbf_activation_notice_dismissed', 1 );
@@ -82,6 +100,19 @@ add_action( 'wp_ajax_wpbf_activation_notice_dismissal', 'wpbf_activation_notice_
  */
 function wpbf_bfcm_year() {
 	return '2026';
+}
+
+/**
+ * Whether the Black Friday sale is on (November 23 – 30 of wpbf_bfcm_year()).
+ *
+ * @return bool
+ */
+function wpbf_is_bfcm_sale() {
+
+	$now = time();
+
+	return $now >= strtotime( 'november 23rd, ' . wpbf_bfcm_year() ) && $now <= strtotime( 'december 1st, ' . wpbf_bfcm_year() );
+
 }
 
 /**
@@ -130,6 +161,13 @@ function wpbf_show_activation_notice() {
 		return;
 	}
 
+	// Stop here on the Theme Settings page itself (the notice points there).
+	$screen = get_current_screen();
+
+	if ( $screen && 'appearance_page_wpbf-premium' === $screen->id ) {
+		return;
+	}
+
 	require __DIR__ . '/settings/activation-notice.php';
 
 }
@@ -152,12 +190,9 @@ function wpbf_show_bfcm_notice() {
 
 	$this_year = wpbf_bfcm_year();
 	$last_year = $this_year - 1;
-	$start     = strtotime( 'november 23rd, ' . $this_year );
-	$end       = strtotime( 'december 1st, ' . $this_year );
-	$now       = time();
 
 	// Stop here if we are not in the sales period.
-	if ( $now < $start || $now > $end ) {
+	if ( ! wpbf_is_bfcm_sale() ) {
 		return;
 	}
 
@@ -201,10 +236,14 @@ add_action( 'admin_notices', 'wpbf_compatibility_notice' );
  */
 function wpbf_clear_font_cache() {
 
-	$nonce = isset( $_POST['nonce'] ) ? $_POST['nonce'] : 0;
+	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 
 	if ( ! wp_verify_nonce( $nonce, 'WPBF_Clear_Font_Cache' ) ) {
-		wp_send_json_error( 'Invalid Token' );
+		wp_send_json_error( __( 'The page has expired. Please reload it and try again.', 'page-builder-framework' ) );
+	}
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( __( 'You are not allowed to do this.', 'page-builder-framework' ) );
 	}
 
 	$result = ( new FontsUtil() )->clearDownloadedGoogleFonts();
@@ -221,7 +260,7 @@ function wpbf_clear_font_cache() {
 		CustomizerCss::refreshWithFonts();
 	}
 
-	wp_send_json_success( 'Font Cache cleared.', 'page-builder-framework' );
+	wp_send_json_success( __( 'Font cache cleared.', 'page-builder-framework' ) );
 
 }
 add_action( 'wp_ajax_wpbf_clear_font_cache', 'wpbf_clear_font_cache' );

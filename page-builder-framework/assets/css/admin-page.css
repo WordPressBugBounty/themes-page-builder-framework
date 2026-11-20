@@ -1,302 +1,281 @@
-/* Customizer Metabox */
-.wpbf-customizer-list {
+/* Theme Settings page: the few layouts heatbox has no component for (heatbox.css holds everything else). */
+
+/* First steps: the three steps next to each other, their links lined up at the bottom */
+.wpbf-first-steps-metabox .heatbox-steps {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--heatbox-gap) 32px;
+}
+
+.wpbf-first-steps-metabox .heatbox-steps > li {
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.wpbf-first-steps-metabox .heatbox-steps > li > a {
+	margin-top: auto;
+}
+
+@media screen and (max-width: 782px) {
+	.wpbf-first-steps-metabox .heatbox-steps {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Customizer links: a grid of tiles with an icon */
+.wpbf-customizer-list {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
 	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+@media screen and (max-width: 1100px) {
+	.wpbf-customizer-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 .wpbf-customizer-list li {
 	margin: 0;
-	flex: 0 50%;
-	border-bottom: 1px solid #ddd;
 }
 
-.wpbf-customizer-list li:nth-child(odd) {
-	border-right: 1px solid #ddd;
-}
-
-.wpbf-customizer-list li p {
-	font-size: 16px;
-}
-
-.wpbf-customizer-list li a {
-	text-decoration: none;
-	font-size: 16px;
-}
-
-.wpbf-customizer-list li:last-child {
-	width: 100%;
-	flex: 0 100%;
-	border: none;
-	padding: 20px;
-	background: #f9f9f9;
-}
-
-.wpbf-customizer-list li a {
-	display: inline-block;
-	padding: 20px;
-}
-
-/* Review Metabox */
-.wpbf-review-metabox {
-}
-
-/* Resources Metabox */
-.wpbf-resources-metabox ul {
-	margin: 0;
-}
-
-.wpbf-resources-metabox li {
-	margin-bottom: 15px;
-}
-
-.wpbf-resources-metabox li:last-child {
-	margin-bottom: 0;
-}
-
-.wpbf-resources-metabox a {
-	text-decoration: none;
-}
-
-/* Premium Add-On Metabox */
-.wpbf-premium-add-on-banner-link {
-	display: block;
-	margin-bottom: 20px;
-	box-shadow: none !important;
-}
-.wpbf-premium-add-on-banner {
-	max-width: 100%;
-	border: 1px solid #ddd;
-}
-
-.wpbf-premium-list {
-	margin: 0;
-}
-
-.wpbf-premium-list li {
+.wpbf-customizer-list a {
 	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
-	margin: 0;
-	padding: 25px 20px;
-	border-bottom: 1px solid #ddd;
+	gap: 10px;
+	height: 100%;
+	padding: 12px 14px;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.3;
+	color: var(--heatbox-text);
+	text-decoration: none;
+	background: var(--heatbox-surface);
+	border: 1px solid var(--heatbox-box-border);
+	border-radius: var(--heatbox-radius-control);
+	transition: color var(--heatbox-transition), background-color var(--heatbox-transition), border-color var(--heatbox-transition);
 }
 
-.wpbf-premium-list li:last-child {
-	border: none;
-	background: #f9f9f9;
+.wpbf-customizer-list a:hover,
+.wpbf-customizer-list a:focus {
+	color: var(--heatbox-accent);
+	background: var(--heatbox-accent-soft);
+	border-color: var(--heatbox-accent-soft-border);
+	box-shadow: none;
 }
 
-.wpbf-premium-list li:last-child h3 {
-	margin-bottom: 10px;
+.wpbf-customizer-list a:focus-visible {
+	outline: 2px solid var(--heatbox-accent);
+	outline-offset: 2px;
 }
 
-.wpbf-premium-list li:last-child p {
-	margin-bottom: 0;
+.wpbf-customizer-link-icon {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	color: var(--heatbox-accent);
 }
 
-.wpbf-premium-list li div {
-	flex: 0 50%;
+/* Premium tab: the top of the features box, the banner's artwork on the left and live text on the right */
+.wpbf-premium-hero {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	aspect-ratio: 1544 / 500;
+	background: #0090fe url(../../img/premium-add-on-art.jpg) left center / cover no-repeat;
+	border-radius: calc(var(--heatbox-radius) - 1px) calc(var(--heatbox-radius) - 1px) 0 0;
 }
 
-.wpbf-premium-list li h3 {
-	display: inline-block;
-	margin-bottom: 0;
-	font-weight: 400;
+.wpbf-premium-hero-content {
+	width: 36%;
+	padding: 24px 28px 24px 0;
+	color: #fff;
 }
 
-.wpbf-premium-list li p {
-	font-size: 16px;
+.wpbf-premium-hero .wpbf-premium-hero-title {
+	margin: 0 0 8px;
+	font-size: 26px;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #fff;
 }
 
-.wpbf-premium-list .tooltip {
-	position: relative;
-	display: inline-block;
-	cursor: pointer;
-	color: #ccc;
-	margin-left: 8px;
+.wpbf-premium-hero p {
+	margin: 0 0 16px;
+	font-size: 14px;
+	color: rgba(255, 255, 255, 0.92);
 }
 
-.wpbf-premium-list .tooltip:hover {
-	color: #0073aa;
-}
-
-.wpbf-premium-list .tooltip:hover p {
-	opacity: 1;
-	z-index: 1;
-}
-
-.wpbf-premium-list .tooltip p {
-	z-index: -1;
-	opacity: 0;
-	position: absolute;
-	bottom: 15px;
-	left: -40px;
-	width: 250px;
+.wpbf-theme-settings-page .button.wpbf-premium-hero-button,
+.wpbf-theme-settings-page .button.wpbf-premium-hero-button:focus {
+	color: #0062e0;
 	background: #fff;
-	padding: 15px;
-	border: 1px solid #ddd;
-	color: initial;
-	-webkit-box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.15);
-	-moz-box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.15);
-	box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.15);
-	border-radius: 4px;
+	border-color: #fff;
 }
 
-.wpbf-premium-list-icon {
-	text-align: right;
-	color: #47d87c;
-	left: 0;
-	bottom: 0;
+.wpbf-theme-settings-page .button.wpbf-premium-hero-button:hover {
+	color: #0050b8;
+	background: rgba(255, 255, 255, 0.88);
+	border-color: transparent;
 }
 
-.wpbf-premium-list-icon i {
-	margin-right: 20px;
-	position: relative;
-}
-
-/* Recommended Metabox */
-.wpbf-recommended-list {
-	display: flex;
-	flex-wrap: wrap;
-	margin: 0;
-}
-
-.wpbf-recommended-list li {
-	display: flex;
-	flex-direction: column;
-	flex: 0 49%;
-	margin-right: 2%;
-}
-
-.wpbf-recommended-list li:nth-child(even) {
-	margin-right: 0;
-}
-
-.wpbf-recommended-list li > a {
-	box-shadow: none;
-}
-
-.wpbf-recommended-list img {
-	max-width: 100%;
-}
-
-.wpbf-recommended-content {
-	padding: 20px;
-	flex: 1 0 auto;
-	min-height: 150px;
-}
-
-.wpbf-recommended-content p {
-	font-size: 16px;
-}
-
-.wpbf-recommended-status {
-	display: flex;
-	align-items: center;
-	padding: 20px;
-	background: #f9f9f9;
-	border-top: 1px solid #ddd;
-}
-
-.wpbf-recommended-status div {
-	flex: 0 50%;
-}
-
-.wpbf-recommended-status-icon {
-	text-align: right;
-	color: #aaa;
-}
-
-.wpbf-recommended-status-icon.green {
-	color: #47d87c;
-}
-
-.wpbf-recommended-status-icon i {
-	font-size: 22px !important;
-}
-
-/* Documentation Metabox */
-.wpbf-documentation-metabox {
-}
-
-.wpbf-documentation-metabox h2 a {
-	text-decoration: none;
-	box-shadow: none;
-}
-
-.wpbf-documentation-boxes {
-	display: flex;
-	flex-wrap: wrap;
-	margin: 0;
-}
-
-.wpbf-documentation-boxes .heatbox {
-	display: flex;
-	flex-direction: column;
-	flex: 0 49%;
-	margin-right: 2%;
-}
-
-.wpbf-documentation-boxes .heatbox:nth-child(even) {
-	margin-right: 0;
-}
-
-/* Loading Button */
-@-webkit-keyframes loadingSpinAround {
-	from {
-		transform: rotate(0);
+@media screen and (max-width: 782px) {
+	.wpbf-premium-hero {
+		aspect-ratio: auto;
+		background: linear-gradient(90deg, #00eafc, #006fff);
 	}
-	to {
-		transform: rotate(359deg);
+
+	.wpbf-premium-hero-content {
+		width: 100%;
+		padding: 24px;
 	}
 }
 
-@keyframes loadingSpinAround {
-	from {
-		transform: rotate(0);
-	}
-	to {
-		transform: rotate(359deg);
-	}
+/* Premium features: more room around the list */
+.wpbf-premium-metabox .heatbox-content {
+	padding-top: 32px;
+	padding-bottom: 32px;
 }
 
-.wpbf-theme-settings-page .button.is-loading {
-	display: inline-flex;
+.wpbf-premium-metabox .heatbox-features {
+	gap: 32px 48px;
+}
+
+.wpbf-premium-metabox .heatbox-features li {
+	gap: 16px;
+}
+
+.wpbf-premium-metabox .heatbox-features h3 {
+	margin-bottom: 6px;
+}
+
+/* Premium features: an icon in a soft circle instead of the check mark */
+.wpbf-feature-icon {
+	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: transparent !important;
+	flex-shrink: 0;
+	width: 36px;
+	height: 36px;
+	color: var(--heatbox-accent);
+	background: var(--heatbox-accent-soft);
+	border-radius: var(--heatbox-radius-small);
+}
+
+.wpbf-feature-icon svg {
+	width: 20px;
+	height: 20px;
+}
+
+/* Stored fonts: one chip per font, written in that font */
+.wpbf-font-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0 0 var(--heatbox-gap);
+	padding: 0;
+	list-style: none;
+}
+
+.wpbf-font-chip {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 8px;
+	margin: 0;
+	padding: 6px 14px;
+	background: var(--heatbox-surface-muted);
+	border: 1px solid var(--heatbox-box-border);
+	border-radius: 999px;
+}
+
+.wpbf-font-chip-name {
+	font-size: 15px;
+	color: var(--heatbox-text);
+}
+
+.wpbf-font-chip-styles {
+	font-size: 12px;
+	color: var(--heatbox-text-muted);
+}
+
+/* Button with its status message next to it (Clear Font Cache) */
+.wpbf-button-with-notice {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+/* Recommended plugins: the button sits at the bottom, so it lines up across a row */
+.wpbf-recommended-list .heatbox {
+	display: flex;
+	flex-direction: column;
+}
+
+.wpbf-recommended-list .heatbox-content {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+}
+
+.wpbf-recommended-list .heatbox-content > :last-child {
+	align-self: flex-start;
+	margin-top: auto;
+}
+
+/* Recommended plugins: a heading above our plugins and above the partners' */
+.wpbf-recommended-heading {
+	margin: 4px 0 20px;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--heatbox-text);
+}
+
+/* Recommended plugins: "Active" is shaped like the buttons, in green, and not clickable */
+.wpbf-theme-settings-page .button.wpbf-plugin-active {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--heatbox-success);
+	background: var(--heatbox-success-soft);
+	border-color: color-mix(in srgb, var(--heatbox-success) 30%, #fff);
+	cursor: default;
 	pointer-events: none;
 }
 
-.wpbf-theme-settings-page .button.is-loading::after {
-	content: "";
-	position: absolute;
-	width: 1em;
-	display: block;
-	height: 1em;
-	border: 2px solid #dbdbdb;
-	/* border: 2px solid $accent-color; */
-	border-color: transparent transparent #fff #fff !important;
-	/* border-color: transparent transparent $accent-color $accent-color !important; */
-	border-radius: 290486px;
-	-webkit-animation: loadingSpinAround 0.5s infinite linear;
-	animation: loadingSpinAround 0.5s infinite linear;
+.wpbf-plugin-active-icon {
+	width: 16px;
+	height: 16px;
 }
 
-.wpbf-theme-settings-page .submission-status {
-	margin-left: 15px;
-	line-height: 39px;
+/* Additional resources: links with an icon */
+.wpbf-resources-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 
-.wpbf-theme-settings-page .submission-status.is-hidden {
-	display: none;
+.wpbf-resources-list li {
+	margin: 0 0 12px;
 }
 
-.wpbf-theme-settings-page .submission-status.is-success {
-	color: #0fa953;
+.wpbf-resources-list li:last-child {
+	margin-bottom: 0;
 }
 
-.wpbf-theme-settings-page .submission-status.is-error {
-	color: tomato;
+.wpbf-resources-list a {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	text-decoration: none;
+}
+
+.wpbf-resource-icon {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
 }
